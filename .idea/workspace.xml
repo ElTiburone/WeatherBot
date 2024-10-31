@@ -4,14 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="24730912-a6d5-4b55-994d-ccbde6d310d2" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/WeatherBot.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/WeatherBot.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="24730912-a6d5-4b55-994d-ccbde6d310d2" name="Changes" comment="HalfWorking">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keyboards.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/states.py" beforeDir="false" afterPath="$PROJECT_DIR$/states.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/weather_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/weather_handler.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -61,6 +57,18 @@
       <option name="presentableId" value="Default" />
       <updated>1730274700087</updated>
     </task>
+    <task id="LOCAL-00001" summary="HalfWorking">
+      <created>1730337179669</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1730337179669</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="HalfWorking" />
+    <option name="LAST_COMMIT_MESSAGE" value="HalfWorking" />
   </component>
 </project>

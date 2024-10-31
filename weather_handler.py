@@ -10,10 +10,9 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
-from config import API_WEATHER_TOKEN
+from config import API_WEATHER_TOKEN, API_OLD
 from states import WeatherStates
 from keyboards import main_menu_keyboard
-
 
 weather_router = Router()
 
@@ -22,10 +21,19 @@ weather_router = Router()
 async def cmd_start(message: Message, state: FSMContext) -> None:
     await state.set_state(WeatherStates.city)
     await message.answer(
-        text=''.join(['Привет, ', message.from_user.first_name,
-                      '!\n Я Бот, который поможет тебе узнать погоду в любом городе планеты!',
-                      '\n В каком городе ты хочешь узнать погоду?'
+        text=''.join(['Здравствуй, ', message.from_user.first_name,
+                      '!\nЯ Бот, который поможет тебе узнать погоду в любом городе планеты!',
+                      '\nВ каком городе ты хочешь узнать погоду?'
                       ]),
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+
+@weather_router.message(Command('city'))
+async def cmd_choose_city(message: Message, state: FSMContext) -> None:
+    await state.set_state(WeatherStates.city)
+    await message.answer(
+        text='Выберите город, для которого хотите узнать погоду:',
         reply_markup=ReplyKeyboardRemove()
     )
 
@@ -36,7 +44,7 @@ async def process_city(message: Message, state: FSMContext) -> None:
     await state.update_data(city=city)
     await state.set_state(WeatherStates.days)
     await message.answer(
-        text='Отлично! Хочешь узнать прогноз погоды на сегодняшний день или на неделю?',
+        text='Отлично! Желаете узнать прогноз погоды на сегодняшний день или на неделю?',
         reply_markup=main_menu_keyboard()
     )
 
@@ -82,7 +90,7 @@ async def get_forecast_weather(message: Message, state: FSMContext) -> None:
 
 
 async def fetch_weather(city: str) -> Optional[dict[str, Any]]:
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&lang=ru&appid={API_WEATHER_TOKEN}&units=metric"
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&lang=ru&units=metric&APPID={API_WEATHER_TOKEN}"
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             if response.status == 200:
@@ -98,18 +106,36 @@ async def fetch_weather(city: str) -> Optional[dict[str, Any]]:
 
 
 async def fetch_forecast(city: str) -> Any:
-    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&lang=ru&appid={API_WEATHER_TOKEN}&units=metric"
+    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&lang=ru&units=metric&APPID={API_WEATHER_TOKEN}"
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             if response.status == 200:
                 data = await response.json()
                 forecast = []
-                for item in data['list'][:7]:  # Количество дней
-                    forecast.append({
-                        "date": item["dt_txt"].split(" ")[0],
-                        "temp": item["main"]["temp"],
-                        "description": item["weather"][0]["description"],
-                    })
+                today = datetime.now()
+                forecast_dates = [today + timedelta(days=i) for i in range(7)]  # Текущая дата и следующие 6 дней
+
+                # Инициализируем словарь для хранения данных по датам
+                forecast_dict = {date.date(): [] for date in forecast_dates}
+
+                # Сбор данных по датам
+                for item in data['list']:
+                    dt = datetime.fromisoformat(item["dt_txt"].replace("Z", "+00:00"))
+                    if dt.date() in forecast_dict:
+                        forecast_dict[dt.date()].append(item["main"]["temp"])
+
+                # Формируем прогноз
+                for date in forecast_dates:
+                    temps = forecast_dict[date.date()]
+                    if temps:
+                        avg_temp = round(sum(temps) / len(temps), 2)
+                        description = data['list'][0]["weather"][0]["description"]  # Берем первое описание
+                        forecast.append({
+                            "date": date.strftime("%d-%m-%Y"),
+                            "temp": avg_temp,
+                            "description": description,
+                        })
+
                 return forecast
             else:
                 return None
