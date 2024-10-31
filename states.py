@@ -1,7 +1,6 @@
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher import State
+from aiogram.fsm.state import State, StatesGroup
 
-class WeatherStates:
-    waiting_for_city = State()
-    waiting_for_year = State()
-    waiting_for_month = State()
+
+class WeatherStates(StatesGroup):
+    city = State()
+    days = State()
