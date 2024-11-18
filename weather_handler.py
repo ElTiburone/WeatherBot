@@ -1,4 +1,5 @@
 import aiohttp
+import aiosqlite
 from typing import Any, Dict, Optional
 from datetime import datetime, timedelta
 from aiogram import Router, F, html
@@ -10,12 +11,23 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
-from config import API_WEATHER_TOKEN, API_OLD
+from config import API_WEATHER_TOKEN
 from states import WeatherStates
 from keyboards import main_menu_keyboard
 
 weather_router = Router()
 
+async def init_db():
+    return await aiosqlite.connect('requests.db')
+
+async def log_weather_request(city: str, user_id: int):
+    async with init_db() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                "INSERT INTO weather_requests (user_id, city, request_time) VALUES (?, ?, ?)",
+                (user_id, city, datetime.now().isoformat())
+            )
+            await conn.commit()
 
 @weather_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext) -> None:
@@ -28,7 +40,6 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
         reply_markup=ReplyKeyboardRemove()
     )
 
-
 @weather_router.message(Command('city'))
 async def cmd_choose_city(message: Message, state: FSMContext) -> None:
     await state.set_state(WeatherStates.city)
@@ -36,7 +47,6 @@ async def cmd_choose_city(message: Message, state: FSMContext) -> None:
         text='Выберите город, для которого хотите узнать погоду:',
         reply_markup=ReplyKeyboardRemove()
     )
-
 
 @weather_router.message(WeatherStates.city)
 async def process_city(message: Message, state: FSMContext) -> None:
@@ -47,7 +57,6 @@ async def process_city(message: Message, state: FSMContext) -> None:
         text='Отлично! Желаете узнать прогноз погоды на сегодняшний день или на неделю?',
         reply_markup=main_menu_keyboard()
     )
-
 
 @weather_router.message(WeatherStates.days, F.text.casefold() == "погода сегодня")
 async def get_today_weather(message: Message, state: FSMContext) -> None:
@@ -63,11 +72,11 @@ async def get_today_weather(message: Message, state: FSMContext) -> None:
                  f"Влажность: {weather_data['humidity']}%\n"
                  f"Скорость ветра: {weather_data['wind_speed']} м/с"
         )
+        await log_weather_request(city, message.from_user.id)  # Запись запроса в базу данных
     else:
         await message.answer("Не удалось получить данные о погоде.")
 
     await state.clear()
-
 
 @weather_router.message(WeatherStates.days, F.text.casefold() == "прогноз погоды")
 async def get_forecast_weather(message: Message, state: FSMContext) -> None:
@@ -83,11 +92,19 @@ async def get_forecast_weather(message: Message, state: FSMContext) -> None:
                 f"Описание: {day['description']}\n"
             )
         await message.answer(forecast_message)
+        await log_weather_request(city, message.from_user.id)  # Запись запроса в базу данных
     else:
         await message.answer("Не удалось получить данные о прогнозе погоды.")
 
     await state.clear()
 
+@weather_router.message(WeatherStates.days, F.text.casefold() == "выбрать город")
+async def change_city(message: Message, state: FSMContext) -> None:
+    await state.set_state(WeatherStates.city)
+    await message.answer(
+        text='Введите новый город:',
+        reply_markup=ReplyKeyboardRemove()
+    )
 
 async def fetch_weather(city: str) -> Optional[dict[str, Any]]:
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&lang=ru&units=metric&APPID={API_WEATHER_TOKEN}"
@@ -103,7 +120,6 @@ async def fetch_weather(city: str) -> Optional[dict[str, Any]]:
                 }
             else:
                 return None
-
 
 async def fetch_forecast(city: str) -> Any:
     url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&lang=ru&units=metric&APPID={API_WEATHER_TOKEN}"

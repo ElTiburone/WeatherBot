@@ -16,7 +16,7 @@ dp = Dispatcher()
 async def set_commands():
     commands = [
         BotCommand(command='start', description='Знакомство с Ботом'),
-        BotCommand(command='city', description='Выберать новый город'),
+        BotCommand(command='city', description='Выбрать новый город'),
     ]
     await bot.set_my_commands(commands, BotCommandScopeDefault())
 
